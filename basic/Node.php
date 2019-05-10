@@ -1,292 +1,277 @@
 <?php
 class Node
 {
-	protected static $document;
-	
-	protected $node;
-	
-	public $parent;
-	
+    public $node;
+    
+    protected static $document;
+    
+    public static function createDocument()
+    {
+        self::$document = new DOMDocument();
+        self::$document->formatOutput = true;
+    }
+    
+    public static function renderDocument()
+    {
+        echo self::$document->saveHTML();
+    }
+    
 	function __construct($name, $value = '')
 	{
-		$this->checkDocument();
-		$this->node = self::$document->createElement($name, $value);
+	    $this->init($name, $value);
 	}
 	
-	public static function createDocument()
+	protected function init($name, $value)
 	{
-		self::$document = new DOMDocument();
-		self::$document->preserveWhiteSpace = true;
-		self::$document->formatOutput = true;
+	    $this->checkDocument();
+	    $this->create($name, $value);
+	    $this->addToDocument();
 	}
 	
 	private function checkDocument()
 	{
-		if(!self::$document) self::createDocument();
+	    if (!self::$document) self::createDocument();
 	}
 	
-	public function render()
+	private function create($name, $value)
 	{
-		echo self::$document->saveHTML();
+	    $this->node = self::$document->createElement($name, $value);
 	}
 	
-	public function setParent(Node $parent)
+	private function addToDocument()
 	{
-		$this->parent = $parent;
+	    self::$document->appendChild($this->node);
 	}
 	
-	public function add(Node $node)
+	private function addChild($childNode)
 	{
-		$node->setParent($this);
-		$this->node->appendChild($node->node);
-		return $node;
+	    $this->node->appendChild($childNode);
 	}
 	
-	public function innerText($text)
+	public function text($value)
 	{
-		$this->node->nodeValue = $text;
+	    return $this->addChild(new DOMText("$value\n"));
 	}
 	
-	public function addValue($text)
+	public function breakLine()
 	{
-		$this->node->nodeValue .= $text;
+	    $this->text('');
 	}
 	
-	public function innerHTML($code)
+	public function add(Node $newNode)
 	{
-		if($code)
-		{
-			$html = self::$document->createDocumentFragment();
-			$html->appendXML(html_entity_decode($code));
-			
-			$this->node->appendChild($html);
-		}
+	    $this->addChild($newNode->node);
+	    $this->breakLine();
+	    
+	    return $newNode;
 	}
 	
 	public function addNode($name, $value = '')
 	{
-		return $this->add(new Node($name, $value));
+	    return $this->add(new Node($name, $value));
 	}
 	
-	public function addConditionalNode($name, $value)
+	public function setValue($value)
 	{
-		return $value? $this->addNode($name, $value) : new Node($name);
-	}
-	
-	public function addList($data, $baseHref = '')
-	{
-		$ul = $this->addNode('ul');
-		
-		foreach ($data as $index => $text)
-		{
-			$li = $ul->addNode('li');
-			
-			if($baseHref || is_string($index))
-			{
-				$a = $li->addNode('a', $text);
-				$a->attr('href', $baseHref . $index);
-			}
-			else
-			{
-				$li->innerText($text);
-			}
-		}
-		
-		return $ul;
-	}
-	
-	public function addLinks($array)
-	{
-		foreach ($array as $label => $href)
-		{
-			$this->a($href, $label);
-		}
-	}
-	
-	public function addText($plainText)
-	{
-		$text = str_replace("\r\n", '<br />', $plainText);
-		
-		foreach (explode('<br /><br />', $text) as $paragraph)
-		{
-			$this->p('')->innerHTML($paragraph);
-		}
-	}
-	
-	public function addTextNode($text)
-	{
-		if($text)
-		{
-			$textNode = self::$document->createTextNode("\n".$text."\n");
-			$this->node->appendChild($textNode);
-		}
+	    $this->node->nodeValue = $value;
 	}
 	
 	public function attr($name, $value)
 	{
-		if($value || is_numeric($value))
-		{
-			$this->node->setAttribute($name, $value);
-		}
-	}
-	
-	public function attrBool($name, $boolean)
-	{
-		$this->attr($name, $boolean? 'true' : 'false');
+	    if(strlen($value))
+	    {
+	        $this->node->setAttribute($name, $value);
+	    }
 	}
 	
 	public function attrs($data)
 	{
-		foreach ($data as $attr => $value)
-		{
-			$this->attr($attr, $value);
-		}
+	    foreach ($data as $attr => $value)
+	    {
+	        $this->attr($attr, $value);
+	    }
 	}
 	
 	public function getAttribute($name)
 	{
-		return $this->node->getAttribute($name);
+	    return $this->node->getAttribute($name);
 	}
 	
 	public function setId($id)
 	{
-		$this->attr('id', $id);
+	    $this->attr('id', $id);
 	}
 	
-	public function setClass($cssClassName)
+	public function setClass($cssClasses)
 	{
-		$this->attr('class', $cssClassName);
+	    $this->attr('class', $cssClasses);
 	}
 	
-	public function addClass($cssClassName)
+	public function addClass($cssClasses)
 	{
-		$this->attr('class', $this->node->getAttribute('class') . ' ' . $cssClassName);
+	    $this->setClass(join(' ', array($this->getAttribute('class'), $cssClasses)));
 	}
 	
 	public function setStyle($cssParams)
 	{
-		$this->attr('style', $cssParams);
+	    $this->attr('style', $cssParams);
+	}
+	
+	public function setIdentifiers($id, $cssClasses)
+	{
+	    $this->setId($id);
+	    $this->setClass($cssClasses);
 	}
 	
 	public function checked()
 	{
-		$this->attr('checked', 'checked');
+	    $this->attr('checked', 'checked');
 	}
 	
 	public function selected()
 	{
-		$this->attr('selected', 'selected');
+	    $this->attr('selected', 'selected');
 	}
 	
 	public function disabled()
 	{
-		$this->attr('disabled', 'disabled');
-	}
-	
-	public function addJsCode($code)
-	{
-		$tag = $this->addNode('script');
-		$tag->attr('type', 'text/javascript');
-		$tag->addTextNode($code);
-		
-		return $tag;
-	}
-	
-	public function h1($text)
-	{
-		return $this->addNode('h1', $text);
-	}
-	
-	public function h2($text)
-	{
-		return $this->addNode('h2', $text);
-	}
-	
-	public function h3($text)
-	{
-		return $this->addNode('h3', $text);
-	}
-	
-	public function h4($text)
-	{
-		return $this->addNode('h4', $text);
-	}
-	
-	public function h5($text)
-	{
-		return $this->addNode('h5', $text);
-	}
-	
-	public function p($text)
-	{
-		return $this->addNode('p', $text);
-	}
-	
-	public function strong($text)
-	{
-		return $this->addNode('strong', $text);
-	}
-	
-	public function a($href, $text, $target = '')
-	{
-		$a = $this->addNode('a', $text);
-		$a->attr('href', $href);
-		
-		if($target) $a->attr('target', $target);
-		
-		return $a;
-	}
-	
-	public function img($alt, $src)
-	{
-		$img = $this->addNode('img');
-		$img->attrs(array('alt' => $alt, 'src' => $src));
-		
-		return $img;
-	}
-	
-	public function ul($list, $baseUri = '')
-	{
-		$ul = $this->addNode('ul');
-		
-		foreach ($list as $index => $data)
-		{
-			$href = $baseUri . $index;
-			
-			if(is_numeric($href))
-			{
-				$ul->addNode('li', $data);
-			}
-			else
-			{
-				$ul->addNode('li')->a($href, $data);
-			}
-		}
-		
-		return $ul;
-	}
-	
-	public function icon($href, $alt, $src)
-	{
-		return $this->a($href, '')->img($alt, $src);
+	    $this->attr('disabled', 'disabled');
 	}
 	
 	public function br($qty = 1)
 	{
-		for($i = 0; $i < $qty; $i++)
-		{
-			$this->addNode('br');
-		}
+	    for($i = 0; $i < $qty; $i++)
+	    {
+	        $this->addNode('br');
+	    }
 	}
 	
 	public function onClick($jsCode)
 	{
-		$this->attr('onclick', $jsCode);
+	    $this->attr('onclick', $jsCode);
 	}
 	
 	public function onChange($jsCode)
 	{
-		$this->attr('onchange', $jsCode);
+	    $this->attr('onchange', $jsCode);
+	}
+	
+	public function h1($text)
+	{
+	    return $this->addNode('h1', $text);
+	}
+	
+	public function h2($text)
+	{
+	    return $this->addNode('h2', $text);
+	}
+	
+	public function h3($text)
+	{
+	    return $this->addNode('h3', $text);
+	}
+	
+	public function h4($text)
+	{
+	    return $this->addNode('h4', $text);
+	}
+	
+	public function h5($text)
+	{
+	    return $this->addNode('h5', $text);
+	}
+	
+	public function h6($text)
+	{
+	    return $this->addNode('h6', $text);
+	}
+	
+	public function p($text)
+	{
+	    return $this->addNode('p', $text);
+	}
+	
+	public function strong($text)
+	{
+	    return $this->addNode('strong', $text);
+	}
+	
+	public function a($href, $text, $target = '')
+	{
+	    $a = $this->addNode('a', $text);
+	    $a->attr('href', $href);
+	    
+	    if($target) $a->attr('target', $target);
+	    
+	    return $a;
+	}
+	
+	public function img($alt, $src)
+	{
+	    $img = $this->addNode('img');
+	    $img->attrs(array('alt' => $alt, 'src' => $src));
+	    
+	    return $img;
+	}
+	
+	public function div($value = '')
+	{
+	    return $this->addNode('div', $value);
+	}
+	
+	public function ul()
+	{
+	    return $this->addNode('ul');
+	}
+	
+	public function ol()
+	{
+	    return $this->addNode('ol');
+	}
+	
+	public function li($value = '')
+	{
+	    return $this->addNode('li', $value);
+	}
+	
+	public function table()
+	{
+	    return $this->addNode('table');
+	}
+	
+	public function tHead()
+	{
+	    return $this->addNode('thead');
+	}
+	
+	public function tBody()
+	{
+	    return $this->addNode('tbody');
+	}
+	
+	public function tFoot()
+	{
+	    return $this->addNode('tfoot');
+	}
+	
+	public function tr()
+	{
+	    return $this->addNode('tr');
+	}
+	
+	public function td($text = '')
+	{
+	    return $this->addNode('td', $text);
+	}
+	
+	public function th($text = '')
+	{
+	    return $this->addNode('th', $text);
+	}
+	
+	function __destruct()
+	{
+	    if($this->node->parentNode === self::$document) self::renderDocument();
 	}
 }
 ?>

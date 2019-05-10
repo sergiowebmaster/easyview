@@ -3,72 +3,64 @@ require_once 'Component.php';
 
 class Table extends Component
 {
-	private $tHead, $tBody, $tFoot, $tr;
+    protected $tagName = 'table';
+    
+	public $tHead, $tBody, $tFoot;
 	
-	function __construct(Node $parent)
+	protected function createStructure()
 	{
-		parent::__construct($parent, 'table', '');
-		
-		$this->tHead = $this->addNode('thead');
-		$this->tBody = $this->addNode('tbody');
+	    $this->tHead = $this->base->addNode('thead');
+	    $this->tBody = $this->base->addNode('tbody');
 	}
 	
-	public function addTFoot()
+	private function addRowData(Node $parent, $rowData)
 	{
-		$this->tFoot = $this->addNode('tfoot');
+	    $tr = $parent->addNode('tr');
+	    
+	    foreach ($rowData as $value)
+	    {
+	        $tr->addNode($parent->node->nodeName == 'thead'? 'th' : 'td', $value);
+	    }
+	    
+	    return $tr;
 	}
 	
-	private function addRow(Node $parent, $data)
+	private function addData(Node $parent, $data)
 	{
-		$this->tr = $parent->addNode('tr');
-		$th = $parent === $this->tHead;
-			
-		foreach ($data as $arg)
-		{
-			if($th) $this->addTh($arg);
-			else $this->addTd($arg);
-		}
-		
-		return $this->tr;
+	    foreach ($data as $rowData)
+	    {
+	        $this->addRowData($parent, $rowData);
+	    }
 	}
 	
-	private function addCol($tagName, $text, $colSpan)
+	public function addColumnNames($colName1, $colName2)
 	{
-		$td = $this->tr->addNode($tagName, $text);
-		
-		if($colSpan > 1) $td->attr('colspan', $colSpan);
-		
-		return $td;
+	    $this->addRowData($this->tHead, func_get_args());
 	}
 	
-	public function addTh($columnName, $colSpan = 1)
+	public function addBodyData($data)
 	{
-		return $this->addCol('th', $columnName, $colSpan);
+	    $this->addData($this->tBody, $data);
 	}
 	
-	public function addTd($text, $colSpan = 1)
+	public function addBodyRow($td1, $td2)
 	{
-		return $this->addCol('td', $text, $colSpan);
+	    $this->addRowData($this->tBody, func_get_args());
 	}
 	
-	public function addTdLink($href, $text)
+	public function addFooter()
 	{
-		return $this->addTd('')->a($href, $text);
+	    $this->tFoot = $this->base->addNode('tfoot');
 	}
 	
-	public function addHeadTr($th1 = '')
+	public function addFooterData($data)
 	{
-		return $this->addRow($this->tHead, func_get_args());
+	    if($this->tFoot) $this->addData($this->tFoot, $data);
 	}
 	
-	public function addBodyTr($td1 = '')
+	public function addCaption($text)
 	{
-		return $this->addRow($this->tBody, func_get_args());
-	}
-	
-	public function addFootTr($td1 = '')
-	{
-		return $this->addRow($this->tFoot, func_get_args());
+	    $this->base->addNode('caption', $text);
 	}
 }
 ?>

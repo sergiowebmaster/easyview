@@ -3,7 +3,8 @@ require_once 'Component.php';
 
 class Form extends Component
 {
-	public $fieldset;
+    protected $tagName = 'form';
+    protected $fieldset, $field;
 	
 	const ACCEPT_IMAGE = 'image/*';
 	const ACCEPT_PDF = 'application/pdf';
@@ -13,59 +14,84 @@ class Form extends Component
 	
 	function __construct(Node $parent, $action, $method = 'post')
 	{
-		parent::__construct($parent, 'form', '');
+		parent::__construct($parent);
 		
-		$this->attr('action', $action);
-		$this->attr('method', $method);
-		
-		$this->fieldset = $this;
+		$this->base->attr('action', $action);
+		$this->base->attr('method', $method);
+	}
+	
+	protected function getParent()
+	{
+	    if($this->field) return $this->field;
+	    else if($this->fieldset) return $this->fieldset;
+	    else return $this->base;
+	}
+	
+	protected function setName($name, Node $tag)
+	{
+	    $tag->attr('name', $name);
+	}
+	
+	protected function setPlaceholder($placeholder, Node $tag)
+	{
+	    $tag->attr('placeholder', $placeholder);
+	}
+	
+	protected function setEnctype()
+	{
+	    $this->base->attr('enctype', 'multipart/form-data');
 	}
 	
 	public function addFieldset($legend)
 	{
-		$this->fieldset = $this->addNode('fieldset');
+		$this->fieldset = $this->base->addNode('fieldset');
 		$this->fieldset->addNode('legend', $legend);
 	}
 	
-	protected function createLabel(Node $parent, $text, $for)
+	protected function createLabel($text, $for)
 	{
-		$label = $parent->addNode('label', $text);
+		$label = $this->getParent()->addNode('label', $text);
 		$label->attr('for', $for);
 		
 		return $label;
 	}
 	
-	public function addLabel($text, $for)
+	public function addField($label, $for)
 	{
-		return $this->createLabel($this->fieldset, $text, $for);
+	    if($this->fieldset)
+	    {
+    		$this->field = $this->fieldset->div();
+    		$this->field->setClass('field-group');
+    		$this->createLabel($label, $for);
+	    }
+	    else
+	    {
+	        echo 'The fieldset is not founded!';
+	    }
 	}
 	
-	protected function formatInput(Node $input, $name, $placeholder)
+	protected function createInput(Node $parent, $type, $id, $name, $placeholder, $value, $size, $maxlength)
 	{
-		$input->attr('name', $name);
-		$input->attr('placeholder', $placeholder);
-	}
-	
-	protected function createInput(Node $parent, $type, $name, $placeholder, $value, $size, $maxlength)
-	{
-		$input = $parent->addNode('input');
+	    $input = $parent->addNode('input');
+	    $input->setId($id);
 		$input->attrs(array(
-				'type' => $type,
-				'value' => $value,
-				'size' => $size,
-				'maxlength' => $maxlength
+			'type' => $type,
+			'value' => $value,
+			'size' => $size,
+			'maxlength' => $maxlength
 		));
 		
-		$this->formatInput($input, $name, $placeholder);
+		$this->setName($name, $input);
+		$this->setPlaceholder($placeholder, $input);
 		
 		return $input;
 	}
 	
-	protected function createInputFile(Node $parent, $name, $size, $accept, $multiple)
+	protected function createInputFile($name, $size, $maxlength, $accept, $multiple)
 	{
-		$this->attr('enctype', 'multipart/form-data');
+		$this->setEnctype();
 		
-		$input = $this->createInput($parent, 'file', $name, '', '', $size, 0);
+		$input = $this->createInput($this->getParent(), 'file', $name, $name, '', '', $size, $maxlength);
 		
 		if($accept) $input->attr('accept', $accept);
 		if($multiple) $input->attr('multiple', 'multiple');
@@ -73,95 +99,109 @@ class Form extends Component
 		return $input;
 	}
 	
-	protected function createSelect(Node $parent, $name, $options, $value)
+	protected function createSelect($name, $options, $value)
 	{
-		$node = $parent->addNode('select');
+	    $select = $this->getParent()->addNode('select');
+	    $select->setId($name);
+	    
+	    $this->setName($name, $select);
 		
 		foreach ($options as $optValue => $label)
 		{
-			$option = $node->addNode('option', $label);
+			$option = $select->addNode('option', $label);
 			$option->attr('value', $optValue);
 				
 			if($optValue == $value) $option->selected();
 		}
 		
-		$this->formatInput($node, $name, '');
-		
-		return $node;
+		return $select;
 	}
 	
-	protected function createTextarea(Node $parent, $name, $rows, $cols, $placeholder, $value)
+	protected function createTextarea($name, $placeholder, $value, $rows, $cols)
 	{
-		$textarea = $parent->addNode('textarea', $value);
+		$textarea = $this->getParent()->addNode('textarea', $value);
+		$textarea->setId($name);
 		$textarea->attrs(array(
-				'rows' => $rows,
-				'cols' => $cols
+			'rows' => $rows,
+			'cols' => $cols
 		));
 		
-		$this->formatInput($textarea, $name, $placeholder);
+		$this->setName($name, $textarea);
+		$this->setPlaceholder($placeholder, $textarea);
 		
 		return $textarea;
 	}
 	
-	protected function createChooseInput(Node $parent, $type, $name, $value, $label, $checked = false)
+	protected function createChooseInput($type, $name, $value, $label, $checked)
 	{
-		$input = $this->createInput($parent, $type, $name, '', $value, 0, 0);
-		$input->setId($name);
+		$input = $this->createInput($this->getParent(), $type, '', $name, '', $value, '', '');
 		
 		if($checked) $input->checked();
 		
-		$parent->addTextNode($label);
+		$this->getParent()->text($label);
 		
 		return $input;
 	}
 	
-	public function input($type, $name, $placeholder, $value, $size, $maxlength)
+	protected function createInputButton($value, $name = '')
 	{
-		return $this->createInput($this->fieldset, $type, $name, $placeholder, $value, $size, $maxlength);
+	    return $this->createInput($this->fieldset, $name? 'submit' : 'button', '', $name, '', $value, '', '');
 	}
 	
-	public function inputText($name, $size, $maxlength, $placeholder = '', $value = '')
+	public function addInputText($name, $size, $maxlength, $placeholder = '', $value = '')
 	{
-		return $this->input('text', $name, $placeholder, $value, $size, $maxlength);
+	    return $this->createInput($this->getParent(), 'text', $name, $name, $placeholder, $value, $size, $maxlength);
 	}
 	
-	public function inputPwd($name, $placeholder, $value = '', $size = 8, $maxlength = 10)
+	public function addInputPwd($name, $placeholder, $value = '', $size = 8, $maxlength = 10)
 	{
-		return $this->input('password', $name, $placeholder, $value, $size, $maxlength);
+	    return $this->createInput($this->getParent(), 'password', $name, $name, $placeholder, $value, $size, $maxlength);
 	}
 	
-	public function inputFile($name, $size, $accept = '', $multiple = false)
+	public function addInputFile($name, $size, $accept = '', $multiple = false, $maxlength = 100)
 	{
-		return $this->createInputFile($this->fieldset, $name, $size, $accept, $multiple);
+	    return $this->createInputFile($name, $size, $maxlength, $accept, $multiple);
 	}
 	
-	public function checkbox($name, $value, $label, $checked = false)
+	public function addCheckbox($name, $value, $label, $checked = false)
 	{
-		return $this->createChooseInput($this->fieldset, 'checkbox', $name, $value, $label, $checked);
+		return $this->createChooseInput('checkbox', $name, $value, $label, $checked);
 	}
 	
-	public function radio($name, $value, $label, $checked = false)
+	public function addCheckboxGroup($name, $data, $defaultValues = array())
 	{
-		return $this->createChooseInput($this->fieldset, 'radio', $name, $value, $label, $checked);
+	    foreach ($data as $value => $label)
+	    {
+	        $this->addCheckbox($name, $value, $label, is_array($defaultValues) && in_array($value, $defaultValues));
+	    }
 	}
 	
-	public function select($name, $options, $value = '')
+	public function addRadio($name, $value, $label, $checked = false)
 	{
-		return $this->createSelect($this->fieldset, $name, $options, $value);
+	    return $this->createChooseInput('radio', $name, $value, $label, $checked);
 	}
 	
-	public function textarea($name, $rows = 5, $cols = 50, $placeholder = '', $value = '')
+	public function addRadioGroup($name, $data, $defaultValue = '')
 	{
-		return $this->createTextarea($this->fieldset, $name, $rows, $cols, $placeholder, $value);
+	    foreach ($data as $value => $label)
+	    {
+	        $this->addRadio($name, $value, $label, $value === $defaultValue);
+	    }
 	}
 	
-	public function addButton($value, $name = '')
+	public function addSelect($name, $options, $value = '')
 	{
-		$btn = $this->input('button', $name, '', $value, '', '');
-		
-		if ($name) $btn->attr('type', 'submit');
-		
-		return $btn;
+	    return $this->createSelect($name, $options, $value);
+	}
+	
+	public function addTextarea($name, $placeholder = '', $value = '', $rows = 5, $cols = 50)
+	{
+	    return $this->createTextarea($name, $placeholder, $value, $rows, $cols);
+	}
+	
+	public function addInputButton($value, $name = '')
+	{
+		return $this->createInputButton($value, $name);
 	}
 }
 ?>
