@@ -1,7 +1,7 @@
 <?php
 class Node
 {
-    public $node;
+    public $dom;
     
     protected static $document;
     
@@ -18,11 +18,6 @@ class Node
     
 	function __construct($name, $value = '')
 	{
-	    $this->init($name, $value);
-	}
-	
-	protected function init($name, $value)
-	{
 	    $this->checkDocument();
 	    $this->create($name, $value);
 	    $this->addToDocument();
@@ -35,34 +30,32 @@ class Node
 	
 	private function create($name, $value)
 	{
-	    $this->node = self::$document->createElement($name, $value);
+	    $this->dom = self::$document->createElement($name, $value);
 	}
 	
 	private function addToDocument()
 	{
-	    self::$document->appendChild($this->node);
+	    self::$document->appendChild($this->dom);
 	}
 	
 	private function addChild($childNode)
 	{
-	    $this->node->appendChild($childNode);
+	    $this->dom->appendChild($childNode);
 	}
 	
 	public function text($value)
 	{
-	    return $this->addChild(new DOMText("$value\n"));
+	    return $this->addChild(new DOMText($value));
 	}
 	
 	public function breakLine()
 	{
-	    $this->text('');
+	    $this->text("\n");
 	}
 	
 	public function add(Node $newNode)
 	{
-	    $this->addChild($newNode->node);
-	    $this->breakLine();
-	    
+	    $this->addChild($newNode->dom);
 	    return $newNode;
 	}
 	
@@ -71,17 +64,24 @@ class Node
 	    return $this->add(new Node($name, $value));
 	}
 	
-	public function setValue($value)
+	public function getName()
 	{
-	    $this->node->nodeValue = $value;
+	    return $this->dom->nodeName;
 	}
 	
-	public function attr($name, $value)
+	public function getValue()
 	{
-	    if(strlen($value))
-	    {
-	        $this->node->setAttribute($name, $value);
-	    }
+	    return $this->dom->nodeValue;
+	}
+	
+	public function setValue($value)
+	{
+	    $this->dom->nodeValue = $value;
+	}
+	
+	public function attr($name, $value = '')
+	{
+	    strlen($value)? $this->dom->setAttribute($name, $value) : $this->dom->getAttribute($name);
 	}
 	
 	public function attrs($data)
@@ -90,11 +90,6 @@ class Node
 	    {
 	        $this->attr($attr, $value);
 	    }
-	}
-	
-	public function getAttribute($name)
-	{
-	    return $this->node->getAttribute($name);
 	}
 	
 	public function setId($id)
@@ -109,7 +104,7 @@ class Node
 	
 	public function addClass($cssClasses)
 	{
-	    $this->setClass(join(' ', array($this->getAttribute('class'), $cssClasses)));
+	    $this->setClass(join(' ', array($this->attr('class'), $cssClasses)));
 	}
 	
 	public function setStyle($cssParams)
@@ -219,6 +214,11 @@ class Node
 	    return $this->addNode('div', $value);
 	}
 	
+	public function section($value = '')
+	{
+	    return $this->addNode('section', $value);
+	}
+	
 	public function ul()
 	{
 	    return $this->addNode('ul');
@@ -269,9 +269,31 @@ class Node
 	    return $this->addNode('th', $text);
 	}
 	
+	public function addList($arg1, $arg2)
+	{
+	    $list = $this->ul();
+	    
+	    foreach(func_get_args() as $text)
+	    {
+	        $list->li($text);
+	    }
+	    
+	    return $list;
+	}
+	
+	public function getParentNode()
+	{
+	    return $this->dom->parentNode;
+	}
+	
+	private function render()
+	{
+	    if($this->getParentNode() === self::$document) self::renderDocument();
+	}
+	
 	function __destruct()
 	{
-	    if($this->node->parentNode === self::$document) self::renderDocument();
+	    $this->render();
 	}
 }
 ?>

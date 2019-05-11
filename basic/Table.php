@@ -19,7 +19,7 @@ class Table extends Component
 	    
 	    foreach ($rowData as $value)
 	    {
-	        $tr->addNode($parent->node->nodeName == 'thead'? 'th' : 'td', $value);
+	        $tr->addNode($parent->getName() == 'thead'? 'th' : 'td', $value);
 	    }
 	    
 	    return $tr;

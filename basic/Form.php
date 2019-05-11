@@ -12,12 +12,10 @@ class Form extends Component
 	const ACCEPT_EXCEL = 'application/vnd.ms-excel';
 	const ACCEPT_PPT = 'application/vnd.ms-powerpoint';
 	
-	function __construct(Node $parent, $action, $method = 'post')
+	protected function configureBase()
 	{
-		parent::__construct($parent);
-		
-		$this->base->attr('action', $action);
-		$this->base->attr('method', $method);
+	    $this->setAction('');
+	    $this->setMethod('post');
 	}
 	
 	protected function getParent()
@@ -37,9 +35,24 @@ class Form extends Component
 	    $tag->attr('placeholder', $placeholder);
 	}
 	
-	protected function setEnctype()
+	public function setAction($action)
 	{
-	    $this->base->attr('enctype', 'multipart/form-data');
+	    $this->base->attr('action', $action);
+	}
+	
+	public function setMethod($method)
+	{
+	    $this->base->attr('method', $method);
+	}
+	
+	protected function setEnctype($enctype)
+	{
+	    $this->base->attr('enctype', $enctype);
+	}
+	
+	protected function setEnctypeUpload()
+	{
+	    $this->setEnctype('multipart/form-data');
 	}
 	
 	public function addFieldset($legend)
@@ -89,7 +102,7 @@ class Form extends Component
 	
 	protected function createInputFile($name, $size, $maxlength, $accept, $multiple)
 	{
-		$this->setEnctype();
+		$this->setEnctypeUpload();
 		
 		$input = $this->createInput($this->getParent(), 'file', $name, $name, '', '', $size, $maxlength);
 		

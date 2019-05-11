@@ -5,7 +5,7 @@ class Page
 {
 	private $html, $head, $title, $favicon;
 	
-	public $body;
+	public $body, $header, $nav, $content, $aside, $footer;
 	
 	function __construct()
 	{
@@ -14,10 +14,29 @@ class Page
 	    $this->body = $this->html->addNode('body');
 	    $this->title = $this->head->addNode('title');
 	}
+
+	public function createBasicStructure()
+	{
+	    $this->header = $this->body->addNode('header');
+	    $this->nav = new Menu($this->body);
+	    $this->content = $this->body->addNode('article');
+	    $this->aside = $this->body->addNode('aside');
+	    $this->footer = $this->body->addNode('footer');
+	}
+	
+	public function setLang($language)
+	{
+	    $this->html->attr('lang', $language);
+	}
 	
 	public function addBaseHref($url)
 	{
 	    $this->head->addNode('base')->attr('href', $url);
+	}
+	
+	public function getTitle()
+	{
+	    return $this->title->getValue();
 	}
 	
 	public function setTitle($title)
@@ -25,74 +44,79 @@ class Page
 	    $this->title->setValue($title);
 	}
 	
-	public function addMeta($data)
+	protected function addMetaTag()
 	{
-	    $this->head->addNode('meta')->attrs($data);
+	    return $this->head->addNode('meta');
 	}
 	
 	public function addMetaContent($name, $content)
 	{
-	    $this->addMeta(array('name' => $name, 'content' => $content));
+	    $this->addMetaTag()->attrs(array('name' => $name, 'content' => $content));
 	}
 	
-	public function addMetaOG($og)
+	public function addMetaOG($property, $content)
 	{
-	    foreach ($og as $property => $content)
-	    {
-	        $this->addMeta(array(
-	            'property' => 'og:' . $property,
-	            'content' => $content)
-	            );
-	    }
+	    $this->addMetaTag()->attrs(array('property' => "og:$property", 'content' => $content));
 	}
 	
-	public function setDescription($description)
+	public function addCharset($charset)
+	{
+	    $this->addMetaTag()->attr('charset', $charset);
+	}
+	
+	public function addRobots($robots)
+	{
+	    $this->addMetaContent('robots', $robots);
+	}
+	
+	public function addDescription($description)
 	{
 	    $this->addMetaContent('description', $description);
 	}
 	
-	public function setKeywords($keywords)
+	public function addKeywords($keywords)
 	{
 	    $this->addMetaContent('keywords', $keywords);
 	}
 	
-	public function setAuthor($author)
+	public function addAuthor($author)
 	{
 	    $this->addMetaContent('author', $author);
 	}
 	
 	public function refresh($seconds)
 	{
-	    if($seconds) $this->addMeta(array('http-equiv' => 'refresh', 'content' => $seconds));
+	    if($seconds) $this->addMetaTag()->attrs(array('http-equiv' => 'refresh', 'content' => $seconds));
 	}
 	
-	public function addCSS($href, $attr = array())
+	public function addLinkTag($data)
 	{
-	    $tag = $this->head->addNode('link');
-	    $tag->attr('rel', 'stylesheet');
-	    $tag->attr('href', $href);
-	    $tag->attrs($attr);
+	    $this->head->addNode('link')->attrs($data);
 	}
 	
-	public function addJsScript($code)
+	public function addCSS($href, $aditionalAttributes = array())
 	{
-	    $tag = $this->head->addNode('script');
-	    $tag->attr('type', 'text/javascript');
-	    $tag->setValue($code);
-	    
-	    return $tag;
+	    $this->addLinkTag(array_merge(array('rel' => 'stylesheet', 'href' => $href), $aditionalAttributes));
 	}
 	
-	public function addJS($src, $attr = array())
+	public function addScriptTag($data, $code = '')
 	{
-	    $tag = $this->addJsScript('');
-	    $tag->attr('src', $src);
-	    $tag->attrs($attr);
+	    $this->head->addNode('script', $code)->attrs($data);
+	}
+	
+	public function addJS($src, $code = '', $aditionalAttributes = array())
+	{
+	    $this->addScriptTag(array_merge(array('type' => 'text/javascript', 'src' => $src), $aditionalAttributes), $code);
 	}
 	
 	public function addJsDefer($src)
 	{
-	    $this->addJS($src, array('defer' => 'defer'));
+	    $this->addJS($src, '', array('defer' => 'defer'));
+	}
+	
+	public function addJavascriptCode($code)
+	{
+	    $this->addJS('', $code);
 	}
 }
 ?>
