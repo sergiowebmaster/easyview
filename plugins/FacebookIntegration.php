@@ -1,10 +1,10 @@
 <?php
-class FacebookIntegration extends Integration
+class FacebookIntegration
 {
 	function __construct(Page $page)
 	{
 		$page->body->addNode('div')->setId('fb-root');
-		$page->addJsCode('(function(d, s, id) {
+		$page->addJavascriptCode('(function(d, s, id) {
 		  var js, fjs = d.getElementsByTagName(s)[0];
 		  if (d.getElementById(id)) return;
 		  js = d.createElement(s); js.id = id;

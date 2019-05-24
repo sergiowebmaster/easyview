@@ -7,10 +7,39 @@ class Table extends Component
     
 	public $tHead, $tBody, $tFoot;
 	
-	protected function createStructure()
+	public function addCaption($text)
+	{
+	    $this->base->addNode('caption', $text);
+	}
+	
+	private function addTHead()
 	{
 	    $this->tHead = $this->base->addNode('thead');
+	}
+	
+	private function addTBody()
+	{
 	    $this->tBody = $this->base->addNode('tbody');
+	}
+	
+	private function addTFoot()
+	{
+	    $this->tFoot = $this->base->addNode('tfoot');
+	}
+	
+	private function checkTHead()
+	{
+	    if(!$this->tHead) $this->addTHead();
+	}
+	
+	private function checkTBody()
+	{
+	    if(!$this->tBody) $this->addTBody();
+	}
+	
+	private function checkTFoot()
+	{
+	    if(!$this->tFoot) $this->addTFoot();
 	}
 	
 	private function addRowData(Node $parent, $rowData)
@@ -25,7 +54,7 @@ class Table extends Component
 	    return $tr;
 	}
 	
-	private function addData(Node $parent, $data)
+	private function addRows(Node $parent, $data)
 	{
 	    foreach ($data as $rowData)
 	    {
@@ -33,34 +62,37 @@ class Table extends Component
 	    }
 	}
 	
-	public function addColumnNames($colName1, $colName2)
+	public function addTHeadData($data)
 	{
-	    $this->addRowData($this->tHead, func_get_args());
+	    $this->checkTHead();
+	    $this->addRows($this->tHead, $data);
 	}
 	
-	public function addBodyData($data)
+	public function addTBodyData($data)
 	{
-	    $this->addData($this->tBody, $data);
+	    $this->checkTBody();
+	    $this->addRows($this->tBody, $data);
+	}
+	
+	public function addTFootData($data)
+	{
+	    $this->checkTFoot();
+	    $this->addRows($this->tFoot, $data);
+	}
+	
+	public function addColumnNames($colName1, $colName2)
+	{
+	    $this->addTHeadData(array(func_get_args()));
 	}
 	
 	public function addBodyRow($td1, $td2)
 	{
-	    $this->addRowData($this->tBody, func_get_args());
+	    $this->addTBodyData(array(func_get_args()));
 	}
 	
-	public function addFooter()
+	public function addFooterRow($td1)
 	{
-	    $this->tFoot = $this->base->addNode('tfoot');
-	}
-	
-	public function addFooterData($data)
-	{
-	    if($this->tFoot) $this->addData($this->tFoot, $data);
-	}
-	
-	public function addCaption($text)
-	{
-	    $this->base->addNode('caption', $text);
+	    $this->addTFootData(array(func_get_args()));
 	}
 }
 ?>

@@ -1,5 +1,6 @@
 <?php
 require_once 'Node.php';
+require_once 'Menu.php';
 
 class Page
 {
@@ -117,6 +118,50 @@ class Page
 	public function addJavascriptCode($code)
 	{
 	    $this->addJS('', $code);
+	}
+	
+	public function addLoginForm(Node $parent, $actionUri, $title, $emailLabel, $passwordLabel, $submitLabel = 'Login')
+	{
+	    require_once 'Form.php';
+	    
+	    $form = new Form($parent);
+	    $form->setAction($actionUri);
+	    $form->addFieldset($title);
+	    $form->addTextField($emailLabel, 'email', 20, 100);
+	    $form->addPasswordField($passwordLabel, 'password');
+	    $form->addInputSubmit('action', $submitLabel);
+	    
+	    return $form;
+	}
+	
+	public function addContactForm($actionUri, $title, $nameLabel, $emailLabel, $subjectLabel, $messageLabel, $submitLabel = 'Send')
+	{
+	    require_once 'Form.php';
+	    
+	    $form = new Form($this->content);
+	    $form->setAction($actionUri);
+	    $form->addFieldset($title);
+	    $form->addTextField($nameLabel, 'name', 50, 40);
+	    $form->addTextField($emailLabel, 'email', 50, 100);
+	    $form->addTextField($subjectLabel, 'subject', 50, 100);
+	    $form->addTextareaField($messageLabel, 'message');
+	    $form->addInputSubmit('action', $submitLabel);
+	    
+	    return $form;
+	}
+	
+	public function addTable($caption, $columnNames, $rowsData, $footerData = array())
+	{
+	    require_once 'Table.php';
+	    
+	    $table = new Table($this->content);
+	    $table->addCaption($caption);
+	    $table->addTHeadData($columnNames);
+	    $table->addTBodyData($rowsData);
+	    
+	    if($footerData) $table->addTFootData($footerData);
+	    
+	    return $table;
 	}
 }
 ?>

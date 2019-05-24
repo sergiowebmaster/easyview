@@ -14,7 +14,6 @@ class Form extends Component
 	
 	protected function configureBase()
 	{
-	    $this->setAction('');
 	    $this->setMethod('post');
 	}
 	
@@ -176,6 +175,11 @@ class Form extends Component
 	    return $this->createInputFile($name, $size, $maxlength, $accept, $multiple);
 	}
 	
+	public function addInputSubmit($name, $value)
+	{
+	    return $this->createInput($this->getParent(), 'submit', '', $name, '', $value, '', '');
+	}
+	
 	public function addCheckbox($name, $value, $label, $checked = false)
 	{
 		return $this->createChooseInput('checkbox', $name, $value, $label, $checked);
@@ -215,6 +219,30 @@ class Form extends Component
 	public function addInputButton($value, $name = '')
 	{
 		return $this->createInputButton($value, $name);
+	}
+	
+	public function addTextField($label, $name, $size, $maxlength)
+	{
+	    $this->addField($label, $name);
+	    $this->addInputText($name, $size, $maxlength)->setId($name);
+	}
+	
+	public function addPasswordField($label, $name, $placeholder = '******', $size = 8, $maxlength = 10)
+	{
+	    $this->addField($label, $name);
+	    $this->addInputPwd($name, $placeholder, '', $size, $maxlength)->setId($name);
+	}
+	
+	public function addSelectField($label, $name, $options, $value = '')
+	{
+	    $this->addField($label, $name);
+	    $this->addSelect($name, $options, $value)->setId($name);
+	}
+	
+	public function addTextareaField($label, $name, $rows = 10, $cols = 50)
+	{
+	    $this->addField($label, $name);
+	    $this->addTextarea($name, '', '', $rows, $cols)->setId($name);
 	}
 }
 ?>
