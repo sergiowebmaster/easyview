@@ -25,6 +25,11 @@ class Page
 	    $this->footer = $this->body->addNode('footer');
 	}
 	
+	public function addH1Title()
+	{
+	    $this->content->h1($this->getTitle());
+	}
+	
 	public function setLang($language)
 	{
 	    $this->html->attr('lang', $language);
