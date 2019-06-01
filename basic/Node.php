@@ -281,6 +281,61 @@ class Node
 	    return $list;
 	}
 	
+	public function source($src, $type)
+	{
+	    $source = $this->addNode('source');
+	    $source->attrs(array('src' => $src, 'type' => $type));
+	    
+	    return $source;
+	}
+	
+	public function track($src, $kind, $lang, $label)
+	{
+	    $track = $this->addNode('track');
+	    $track->attrs(['src' => $src, 'kind' => $kind, 'lang' => $lang, 'label' => $label]);
+	    
+	    return $track;
+	}
+	
+	public function addSubtitles($languages, $filename, $var = '*')
+	{
+	    foreach ($languages as $lang => $label)
+	    {
+	        $this->track(str_replace($var, $label, $filename), 'subtitles', $lang, $label);
+	    }
+	    
+	    return $this;
+	}
+	
+	protected function getExtension($filename)
+	{
+	    $array = explode('.', $filename);
+	    return array_pop($array);
+	}
+	
+	protected function addMedia($tagName, $sources, $controls)
+	{
+	    $media = $this->addNode($tagName);
+	    $media->attr('controls', $controls? true : false);
+	    
+	    foreach ($sources as $src)
+	    {
+	        $media->source($src, "$tagName/{$this->getExtension($src)}");
+	    }
+	    
+	    return $media;
+	}
+	
+	public function video($sources, $controls = true)
+	{
+	    return $this->addMedia('video', $sources, $controls);
+	}
+	
+	public function audio($sources, $controls = true)
+	{
+	    return $this->addMedia('audio', $sources, $controls);
+	}
+	
 	public function getParentNode()
 	{
 	    return $this->dom->parentNode;
